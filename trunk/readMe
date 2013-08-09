@@ -1,0 +1,23 @@
+Bu yazılım DAG adına Mohammad Shameoni Niaei geliştirmiştir.
+
+1)pat dosyası:
+	
+	|depolama
+		|Avrasya
+			|_MSG
+			|_MSGRSS
+			|_MPF
+		DAG-
+			|_MSG
+			|_MSGRSS
+			|_MPF
+		Turkiye-
+			|_MSG
+			|_MSGRSS
+			|_MPF
+
+	depolama dizinini tutar.
+
+2) chTable:
+	Kanal tablosu
+
