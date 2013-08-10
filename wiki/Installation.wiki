@@ -1,7 +1,7 @@
 #summary One-sentence summary of this page.
 #labels Featured
 
-= Installation =
+== Installation ==
 
 Actually Camiryo have no installation. However it have dependencies.
 
@@ -13,7 +13,7 @@ Firstly install all dependencies and then just unpack Camiryo wherever you want 
 
 
 
-= Dependencies=
+== Dependencies==
 
 Camiryo's dependencies are:
 
@@ -27,5 +27,5 @@ Camiryo's dependencies are:
 
   * [http://www.numpy.org/ Numpy] and [http://www.h5py.org/ h5py].
 
-= Unpacking =
-Now Download Camiryo and unpack it wherever you want.
+== Unpacking ==
+Now Download Camiryo and unpack it wherever you want. After unpacking just be sure you wrote All satellites and locations on _pat_ file
