@@ -28,4 +28,6 @@ Camiryo's dependencies are:
   * [http://www.numpy.org/ Numpy] and [http://www.h5py.org/ h5py].
 
 == Unpacking ==
-Now Download Camiryo and unpack it wherever you want. After unpacking just be sure you wrote All satellites and locations on _pat_ file
+Now Download Camiryo and unpack it wherever you want.
+
+After unpacking just be sure you wrote All satellites and locations on _pat_ file
