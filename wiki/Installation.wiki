@@ -30,6 +30,6 @@ Camiryo's dependencies are:
   * [http://www.h5py.org/ h5py].
 
 == Unpacking ==
-Now Download Camiryo and unpack it wherever you want.
+Now Download Camiryo and unpack it wherever you want (Be sure the users have all permissions on the file in question).
 
 After unpacking just be sure you wrote All satellites and locations on _pat_ file
