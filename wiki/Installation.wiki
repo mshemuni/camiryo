@@ -25,7 +25,9 @@ Camiryo's dependencies are:
 
   * [http://www.pythonware.com/products/pil/ PIL]
 
-  * [http://www.numpy.org/ Numpy] and [http://www.h5py.org/ h5py].
+  * [http://www.numpy.org/ Numpy]
+
+  * [http://www.h5py.org/ h5py].
 
 == Unpacking ==
 Now Download Camiryo and unpack it wherever you want.
