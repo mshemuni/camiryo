@@ -5,4 +5,4 @@
 
 Camiryo Python ve QT ile yazılmış bir kullanıcı arayüzüdür.<br>
 Camiryo TMet V1.4.6'nin ürettiği HDF5 dosyalarından RGB görüntü elde edebilir, gösterebilir ve hareketlendirebilir.<br>
-Bu amaç için Camiryo [http://www.python.org/ Python], [http://www.riverbankcomputing.com/software/pyqt/intro pyqt], [http://www.pythonware.com/products/pil/ PIL], [http://www.numpy.org/ numpy] and [http://www.h5py.org/ h5py] kullanır.
+Bu amaç için Camiryo [http://www.python.org/ python], [http://www.riverbankcomputing.com/software/pyqt/intro PyQt], [http://www.pythonware.com/products/pil/ PIL], [http://www.numpy.org/ Numpy] and [http://www.h5py.org/ h5py]. kullanır.
