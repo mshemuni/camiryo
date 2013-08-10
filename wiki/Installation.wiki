@@ -3,7 +3,7 @@
 
 == Installation ==
 
-Actually Camiryo have no installation. However it have dependencies.
+Actually Camiryo has no installation. However it have dependencies.
 
 Firstly install all dependencies and then just unpack Camiryo wherever you want and run it as:
 
