@@ -1,0 +1,31 @@
+#summary One-sentence summary of this page.
+#labels Featured
+
+= Installation =
+
+Actually Camiryo have no installation. However it have dependencies.
+
+Firstly install all dependencies and then just unpack Camiryo wherever you want and run it as:
+
+`cd [camiryo's location]`
+
+`python main.py`
+
+
+
+= Dependencies=
+
+Camiryo's dependencies are:
+
+  * [http://www.python.org/ python]
+
+  * [http://www.riverbankcomputing.com/software/pyqt/intro PyQt]
+   * For Ubuntu try: `sudo apt-get install pyqt4-dev-tools`
+   * For Fedora try: `sudo yum install pyqt4-devel`
+
+  * [http://www.pythonware.com/products/pil/ PIL]
+
+  * [http://www.numpy.org/ Numpy] and [http://www.h5py.org/ h5py].
+
+= Unpacking =
+Now Download Camiryo and unpack it wherever you want.
