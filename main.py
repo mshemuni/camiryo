@@ -1,466 +1,499 @@
-# -*- coding: utf-8 -*-
-"""
-Created---------------------------------------------------------------------------------------------
-﻿  ﻿  By:
-﻿  ﻿  ﻿  Muhammed SHEMUNI﻿	Developer
-﻿  ﻿  ﻿  Yücel KILIÇ﻿		Developer
-﻿  ﻿  at:
-﻿  ﻿  ﻿  Begin﻿				01.03.2013
-﻿  ﻿  ﻿  Last update﻿		19.07.2013
-"""
+import sys, os, glob
+from ftplib import FTP
+import camiryo
 
-import sys , os, time, string, math, signal, datetime, glob
+import tempfile
 
-from atasamMeteosat import Ui_Form
-import MSHYK_Color as myc
-from PyQt4 import QtGui, QtCore
+try:
+	import camiryo as cm
+except:
+	print "Something went wrong while importing Camiryo Library"
 
-class MyForm(QtGui.QWidget):
-  def __init__(self):
-    super(MyForm, self).__init__()
-    self.ui = Ui_Form()
-    self.ui.setupUi(self)
-    
-    f = open('./pat', 'r')
-    for line in f:
-		li=line.strip()
+try:
+	from PyQt4 import QtCore, QtGui
+except:
+	print "Something went wrong while importing PyQt4"
+
+try:
+	from camiryoGUI import Ui_Form
+	import GUI
+except:
+	print "Something went wrong while importing Camiryo GUI"
+
+class MyForm(QtGui.QWidget, Ui_Form):
+	def __init__(self, verb=False):
+		super(MyForm, self).__init__()
+		self.ui = Ui_Form()
+		self.ui.setupUi(self)
+		self.verb = verb
 		
-    #self.ui.lineEdit.setText(QtGui.QApplication.translate("Form", str(li), None, QtGui.QApplication.UnicodeUTF8))
-    self.ui.lineEdit.hide()
-    self.ui.lineEdit_2.hide()
-    self.ui.tabWidget_2.setTabEnabled(2,False)
-    self.ui.tabWidget_3.setTabEnabled(2,False)
-    self.ui.tabWidget_4.setTabEnabled(2,False)
+		self.ui.pushButton.clicked.connect(self.addLocalPath)
+		self.ui.pushButton_2.clicked.connect(lambda: self.remFromList(self.ui.listWidget))
+		self.ui.pushButton_3.clicked.connect(lambda: self.remFromList(self.ui.listWidget_2))
+		self.ui.pushButton_5.clicked.connect(self.testConnection)
+		self.ui.pushButton_4.clicked.connect(self.addRemotePath)
+		self.ui.pushButton_7.clicked.connect(self.updateSetting)
+		self.ui.pushButton_6.clicked.connect(self.animate)
+		self.ui.graphicsView.wheelEvent = self.ZoomAMS
+		
+		self.timer = QtCore.QBasicTimer()
+		self.step = 0
+		
+		self.loadSetting()
+		self.getLists()
+		self.it = 0
+		self.count = 1
+	def timerEvent(self, e):
+		self.it = (self.it + 1)%int(self.count)
+		self.showmeani(self.it+1)
 
-    #self.ui.listWidget.clicked.connect(self.dispTMS)
-    
-    self.ui.listWidget.clicked.connect(self.dispAMS)
-    self.ui.listWidget_2.clicked.connect(self.dispAMR)
-    self.ui.listWidget_3.clicked.connect(self.dispAMP)
-    self.ui.listWidget_4.clicked.connect(self.dispDMS)
-    self.ui.listWidget_5.clicked.connect(self.dispDMR)
-    self.ui.listWidget_6.clicked.connect(self.dispDMP)
-    self.ui.listWidget_7.clicked.connect(self.dispTMS)
-    self.ui.listWidget_8.clicked.connect(self.dispTMR)
-    self.ui.listWidget_9.clicked.connect(self.dispTMP)
-    
-    
-    self.ui.pushButton_2.clicked.connect(self.fillList)
-    self.ui.pushButton_3.clicked.connect(self.fillList)
-    self.ui.pushButton_5.clicked.connect(self.fillList)
-    self.ui.pushButton_7.clicked.connect(self.fillList)
-    self.ui.pushButton_9.clicked.connect(self.fillList)
-    self.ui.pushButton_11.clicked.connect(self.fillList)
-    self.ui.pushButton_13.clicked.connect(self.fillList)
-    self.ui.pushButton_15.clicked.connect(self.fillList)
-    self.ui.pushButton_17.clicked.connect(self.fillList)
-    
-    self.ui.pushButton.clicked.connect(self.animAMS)
-    self.ui.pushButton_4.clicked.connect(self.animAMR)
-    self.ui.pushButton_6.clicked.connect(self.animAMP)
-    self.ui.pushButton_8.clicked.connect(self.animDMS)
-    self.ui.pushButton_10.clicked.connect(self.animDMR)
-    self.ui.pushButton_12.clicked.connect(self.animDMP)
-    self.ui.pushButton_14.clicked.connect(self.animTMS)
-    self.ui.pushButton_16.clicked.connect(self.animTMR)
-    self.ui.pushButton_18.clicked.connect(self.animTMP)
-    
 
-    self.ui.comboBox.currentIndexChanged['QString'].connect(self.dispAMS)
-    self.ui.comboBox_2.currentIndexChanged['QString'].connect(self.dispAMR)
-    self.ui.comboBox_3.currentIndexChanged['QString'].connect(self.dispAMP)
-    
-    self.ui.comboBox_4.currentIndexChanged['QString'].connect(self.dispDMS)
-    self.ui.comboBox_5.currentIndexChanged['QString'].connect(self.dispDMR)
-    self.ui.comboBox_6.currentIndexChanged['QString'].connect(self.dispDMP)
-    
-    self.ui.comboBox_7.currentIndexChanged['QString'].connect(self.dispTMS)
-    self.ui.comboBox_8.currentIndexChanged['QString'].connect(self.dispTMR)
-    self.ui.comboBox_9.currentIndexChanged['QString'].connect(self.dispTMP)
-    
-    #self.ui.pushButton_3.clicked.connect(self.saveSettings)
-    self.ui.graphicsView.wheelEvent = self.ZoomAMS
-    self.ui.graphicsView_2.wheelEvent = self.ZoomAMR
-    self.ui.graphicsView_3.wheelEvent = self.ZoomAMP
-    
-    self.ui.graphicsView_4.wheelEvent = self.ZoomDMS
-    self.ui.graphicsView_5.wheelEvent = self.ZoomDMR
-    self.ui.graphicsView_6.wheelEvent = self.ZoomDMP
-    
-    self.ui.graphicsView_7.wheelEvent = self.ZoomTMS
-    self.ui.graphicsView_8.wheelEvent = self.ZoomTMR
-    self.ui.graphicsView_9.wheelEvent = self.ZoomTMP
-    
-    self.timer = QtCore.QBasicTimer()
-    self.step = 0
-    self.fillList()
-    
-  def getListofItems(self, listDev):
-	  items = listDev.selectedItems()
-	  x=[]
-	  for i in list(items):
-		  x.append(str(i.text()))
-	  return x
-    
-  def animStart(self, listDev, dispDev):
-	  if self.timer.isActive():
-		  self.timer.stop()
-		  self.ui.progressBar.setProperty("value", math.ceil(0))
-		  self.ui.progressBar.setFormat(QtGui.QApplication.translate("Form", "%p%", None, QtGui.QApplication.UnicodeUTF8))
-	  else:
-		  self.timer.start(300, self)
-		  self.ui.lineEdit_2.setText("0")
-		  
-	  	
-  def timerEvent(self, e):
-	  if self.ui.lineEdit.text() == "AMS":
-		  lst = self.getListofItems(self.ui.listWidget)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView)
-			  
-			  self.ui.progressBar.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-		  
-		  
-	  if self.ui.lineEdit.text() == "AMR":
-		  lst = self.getListofItems(self.ui.listWidget_2)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox_2.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView_2)
-			  
-			  self.ui.progressBar_2.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar_2.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-			  
-
-	  if self.ui.lineEdit.text() == "AMP":
-		  lst = self.getListofItems(self.ui.listWidget_3)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox_3.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView_3)
-			  
-			  self.ui.progressBar_3.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar_3.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-
-	  if self.ui.lineEdit.text() == "DMS":
-		  lst = self.getListofItems(self.ui.listWidget_4)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox_4.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView_4)
-			  
-			  self.ui.progressBar_4.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar_4.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-		  
-		  
-	  if self.ui.lineEdit.text() == "DMR":
-		  lst = self.getListofItems(self.ui.listWidget_5)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox_5.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView_5)
-			  
-			  self.ui.progressBar_5.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar_5.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-			  
-			  
-	  if self.ui.lineEdit.text() == "DMP":
-		  lst = self.getListofItems(self.ui.listWidget_6)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox_6.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView_6)
-			  
-			  self.ui.progressBar_6.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar_6.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-			  
-	  if self.ui.lineEdit.text() == "TMS":
-		  lst = self.getListofItems(self.ui.listWidget_7)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox_7.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView_7)
-			  
-			  self.ui.progressBar_7.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar_7.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-
-	  if self.ui.lineEdit.text() == "TMR":
-		  lst = self.getListofItems(self.ui.listWidget_8)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox_8.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView_8)
-			  
-			  self.ui.progressBar_8.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar_8.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-			  
-			  
-	  if self.ui.lineEdit.text() == "TMP":
-		  lst = self.getListofItems(self.ui.listWidget_9)
-		  self.ui.lineEdit_2.setText(str(int(self.ui.lineEdit_2.text())+1))
-		  if int(self.ui.lineEdit_2.text()) < len(lst):
-			  myc.createImage_ani(self.ui.comboBox_9.currentText(), lst[len(lst) - int(self.ui.lineEdit_2.text())])
-			  self.display(self.ui.graphicsView_9)
-			  
-			  self.ui.progressBar_9.setProperty("value", math.ceil((100/len(lst))*(int(self.ui.lineEdit_2.text())+1)))
-			  self.ui.progressBar_9.setFormat(QtGui.QApplication.translate("Form", "%p%" + " | " + self.getTime(self.fileNamePath(lst[len(lst) - int(self.ui.lineEdit_2.text())])), None, QtGui.QApplication.UnicodeUTF8))
-		  else:
-			  self.ui.lineEdit_2.setText("0")
-			  self.ui.lineEdit_2.setText("0")
-
-  def fileNamePath(self, Path):
-	  countOfSlashs = Path.count("/")
-	  imgFileNamePath = Path.split("/")
-	  Name = str(imgFileNamePath[countOfSlashs])
-	  return Name
-
-  def getTime(self, Name):
-	  splitesCount = Name.count("_")
-	  splites = Name.split("_")
-	  DT = str(splites[splitesCount]).replace(".h5","")
-	  yea=DT[0:4]
-	  moun=DT[4:6]
-	  day=DT[6:8]
-	  hour=DT[8:10]
-	  minut=DT[10:12]
-	  return day + "." + moun + "." + yea + " " + hour + ":" + minut
-
-  def animAMS(self):
-	  self.anim(self.ui.comboBox, self.ui.pushButton ,self.ui.listWidget, self.ui.pushButton_2)
-	  self.ui.lineEdit.setText("AMS")
-	  self.animStart(self.ui.listWidget, self.ui.graphicsView )
-  def animAMR(self):
-	  self.ui.lineEdit.setText("AMR")
-	  self.anim(self.ui.comboBox_2, self.ui.pushButton_4 ,self.ui.listWidget_2, self.ui.pushButton_3)
-	  self.animStart(self.ui.listWidget_2, self.ui.graphicsView_2 )
-  def animAMP(self):
-	  self.ui.lineEdit.setText("AMP")
-	  self.anim(self.ui.comboBox_3, self.ui.pushButton_6 ,self.ui.listWidget_3, self.ui.pushButton_5)
-	  self.animStart(self.ui.listWidget_3, self.ui.graphicsView_3 )
-  def animDMS(self):
-	  self.ui.lineEdit.setText("DMS")
-	  self.anim(self.ui.comboBox_4, self.ui.pushButton_8 ,self.ui.listWidget_4, self.ui.pushButton_7)
-	  self.animStart(self.ui.listWidget_4, self.ui.graphicsView_4 )
-  def animDMR(self):
-	  self.ui.lineEdit.setText("DMR")
-	  self.anim(self.ui.comboBox_5, self.ui.pushButton_10 ,self.ui.listWidget_5, self.ui.pushButton_9)
-	  self.animStart(self.ui.listWidget_5, self.ui.graphicsView_5 )
-  def animDMP(self):
-	  self.ui.lineEdit.setText("DMP")
-	  self.anim(self.ui.comboBox_6, self.ui.pushButton_12 ,self.ui.listWidget_6, self.ui.pushButton_10)
-	  self.animStart(self.ui.listWidget_6, self.ui.graphicsView_6 )
-  def animTMS(self):
-	  self.ui.lineEdit.setText("TMS")
-	  self.anim(self.ui.comboBox_7, self.ui.pushButton_14 ,self.ui.listWidget_7, self.ui.pushButton_13)
-	  self.animStart(self.ui.listWidget_7, self.ui.graphicsView_7 )
-  def animTMR(self):
-	  self.ui.lineEdit.setText("TMR")
-	  self.anim(self.ui.comboBox_8, self.ui.pushButton_16 ,self.ui.listWidget_8, self.ui.pushButton_15)
-	  self.animStart(self.ui.listWidget_8, self.ui.graphicsView_8 )
-  def animTMP(self):
-	  self.ui.lineEdit.setText("TMP")
-	  self.anim(self.ui.comboBox_9, self.ui.pushButton_18 ,self.ui.listWidget_9, self.ui.pushButton_17)
-	  self.animStart(self.ui.listWidget_9, self.ui.graphicsView_9 )
-    
-  def anim(self, comb, but, listWid, butref):
-	  if but.text() == "Animate":
-		  listWid.setEnabled(False)
-		  comb.setEnabled(False)
-		  butref.setEnabled(False)
-		  but.setText("Stop")
-	  elif but.text() == "Stop":
-		  listWid.setEnabled(True)
-		  comb.setEnabled(True)
-		  butref.setEnabled(True)
-		  but.setText("Animate")
-
-  def selectFolder(self):
-	  file = str(QtGui.QFileDialog.getExistingDirectory(self, "Select Directory"))
-	  self.ui.lineEdit.setText(QtGui.QApplication.translate("Form", str(file), None, QtGui.QApplication.UnicodeUTF8))
-    
-  def saveSettings(self):
-	  li = self.ui.lineEdit.text()
-	  f = open('./pat','w')
-	  f.write(li)
-	  f.close
-    
-  def fillList(self):
-	  f = open('./pat', 'r')
-	  for line in f:
-		  li=line.strip()
-		  
-	  for i in ("Avrasya","DAG","Turkiye"):
-	  	for u in ("MSG","MSGRSS","MPF"):
-	  		if i=="Avrasya" and u=="MSG":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget)
-	  		elif i=="Avrasya" and u=="MSGRSS":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget_2)
-	  		elif i=="Avrasya" and u=="MPF":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget_3)
-	  		elif i=="DAG" and u=="MSG":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget_4)
-	  		elif i=="DAG" and u=="MSGRSS":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget_5)
-	  		elif i=="DAG" and u=="MPF":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget_6)
-	  		elif i=="Turkiye" and u=="MSG":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget_7)
-	  		elif i=="Turkiye" and u=="MSGRSS":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget_8)
-	  		elif i=="Turkiye" and u=="MPF":
-	  			self.getFiles(li + "/" + i + "/" + u, self.ui.listWidget_9)
+	def animate(self):
+		if not self.timer.isActive():
 			
-  def getFiles(self, path, listDevice):
-	  
-	  a = listDevice.count()
-	  for i in xrange(a):
-		  listDevice.takeItem(0)
-		  
-	  files = glob.glob(path + "/*.h5")
-	  a = listDevice.count()-1
-	  for x in files:
-		  a=a+1
-		  item = QtGui.QListWidgetItem()
-		  listDevice.addItem(item)
-		  item = listDevice.item(a)
-		  item.setText(QtGui.QApplication.translate("Form", x, None, QtGui.QApplication.UnicodeUTF8))
-	  listDevice.sortItems(1)
-	  
-  def dispAMS(self):
-	  FilePath = self.ui.listWidget.currentItem()
-	  met = self.ui.comboBox.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView)
-
-  def dispAMR(self):
-	  FilePath = self.ui.listWidget_2.currentItem()
-	  met = self.ui.comboBox_2.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView_2)
-	  
-  def dispAMP(self):
-	  FilePath = self.ui.listWidget_3.currentItem()
-	  met = self.ui.comboBox_3.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView_3)
-	  
-  def dispTMS(self):
-	  FilePath = self.ui.listWidget_7.currentItem()
-	  met = self.ui.comboBox_7.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView_7)
-
-  def dispTMR(self):
-	  FilePath = self.ui.listWidget_8.currentItem()
-	  met = self.ui.comboBox_8.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView_8)
-	  
-  def dispTMP(self):
-	  FilePath = self.ui.listWidget_9.currentItem()
-	  met = self.ui.comboBox_9.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView_9)
-		  
-  def dispDMS(self):
-	  FilePath = self.ui.listWidget_4.currentItem()
-	  met = self.ui.comboBox_4.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView_4)
-
-  def dispDMR(self):
-	  FilePath = self.ui.listWidget_5.currentItem()
-	  met = self.ui.comboBox_5.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView_5)
-	  
-  def dispDMP(self):
-	  FilePath = self.ui.listWidget_6.currentItem()
-	  met = self.ui.comboBox_6.currentText()
-	  myc.createImage(met, FilePath)
-	  self.display(self.ui.graphicsView_6)
-
-  def display(self, dispp):
-	  diss="tmp/disp.png"
-	  if os.path.isfile(str(diss)):
-		  scene = QtGui.QGraphicsScene()
-		  scene.addPixmap(QtGui.QPixmap(diss))
-		  dispp.setScene(scene)
-
-  def ZoomAMS(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView.scale(1.1, 1.1)
-		  
-  def ZoomAMR(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView_2.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView_2.scale(1.1, 1.1)
+			self.ui.pushButton_6.setText("Stop")
+			self.ui.comboBox.setEnabled(False)
 			
-  def ZoomAMP(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView_3.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView_3.scale(1.1, 1.1)
+			listWidget = self.lst[self.ui.tabWidget_2.currentIndex()]
+			it = 0
+			dispType = self.ui.comboBox.currentText()
+			for i in listWidget.selectedItems():
+				ln = i.text()
+				it = it + 1
+				if ln.contains("@"):
+					u, pa = ln.split("@")
+					usr, passwd = u.split("|")
+					ip, path = pa.split("|")
+					print str(tempfile.gettempdir())
+					tmpFile = self.pathName(str(path))[1]
+					self.getDataOverFTP(ip, usr, passwd, path, str(tempfile.gettempdir()))
 
-  def ZoomDMS(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView_4.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView_4.scale(1.1, 1.1)
-		  
-  def ZoomDMR(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView_5.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView_5.scale(1.1, 1.1)
-			
-  def ZoomDMP(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView_6.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView_6.scale(1.1, 1.1)
+					eFile = "%s/%s" %(str(tempfile.gettempdir()), tmpFile)
+					mc = camiryo.myCol
+					col = mc.coloring(verb=self.verb)
+					if dispType == "Vegetation, Snow, Smoke, Dust and Fog (Day)":
+						data = col.vssdfD(eFile)
+					elif dispType == "Clouds, Convection, Snow, Fog and Fires (Day)":
+						data =  col.ccsfD(eFile)
+					elif dispType == "Snow and Fog (Day)":
+						data =  col.sfD(eFile)
+					elif dispType == "Severe Convection (Day)":
+						data =  col.scD(eFile)
+					elif dispType == "Clouds, Fog and Contrails (Night)":
+						data =  col.cfcN(eFile)
+					elif dispType == "Dust, Thin Clouds and Contrails (Day & Night)":
+						data =  col.dtccDN(eFile)
+					elif dispType == "Severe Cyclones, Jets and PV Analysis (Day & Night)":
+						data =  col.scjPVaDN(fle)
+					col.imgCreate(data, "%s/cam%s.png" %(tempfile.gettempdir(), it))
+					
+					if os.path.isfile(eFile):
+						os.remove(eFile)
+						
+				else:
+					eFile = str(ln)
+					mc = camiryo.myCol
+					col = mc.coloring(verb=self.verb)
+					if dispType == "Vegetation, Snow, Smoke, Dust and Fog (Day)":
+						data = col.vssdfD(eFile)
+					elif dispType == "Clouds, Convection, Snow, Fog and Fires (Day)":
+						data =  col.ccsfD(eFile)
+					elif dispType == "Snow and Fog (Day)":
+						data =  col.sfD(eFile)
+					elif dispType == "Severe Convection (Day)":
+						data =  col.scD(eFile)
+					elif dispType == "Clouds, Fog and Contrails (Night)":
+						data =  col.cfcN(eFile)
+					elif dispType == "Dust, Thin Clouds and Contrails (Day & Night)":
+						data =  col.dtccDN(eFile)
+					elif dispType == "Severe Cyclones, Jets and PV Analysis (Day & Night)":
+						data =  col.scjPVaDN(fle)
+					col.imgCreate(data, "%s/cam%s.png" %(tempfile.gettempdir(), it))
+					
+			self.count = it
+			self.timer.start(300, self)
+		else:
+			self.timer.stop()
+			self.ui.pushButton_6.setText("Animate")
+			self.it = 0
+			self.count = 1
+			self.ui.comboBox.setEnabled(True)
 
-  def ZoomTMS(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView_7.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView_7.scale(1.1, 1.1)
-		  
-  def ZoomTMR(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView_8.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView_8.scale(1.1, 1.1)
+
+	def testConnection(self):
+		ip = str(self.ui.lineEdit.text())
+		user = str(self.ui.lineEdit_2.text())
+		passwd = str(self.ui.lineEdit_3.text())
+		remPath = str(self.ui.lineEdit_4.text())
+		
+		if self.ftp(ip, user, passwd, remPath) == True:
+			GUI.inf(self, "ftp: Connection confirmed.")
+		elif self.ftp(ip, user, passwd, remPath) == False:
+			GUI.err(self, "Connection Failed.\nCheck the server, user name and password or your connection")
+		elif self.ftp(ip, user, passwd, remPath) == None:
+			GUI.err(self, "Check remote directory")
+	
+	def remFromList(self, listDev):
+		GUI.takeFromList(self, listDev)
+
+	def printIf(self, text):
+		if self.verb:
+			print text
+	
+	def pathName(self, path):
+		fileName = os.path.basename(path)
+		pathName = path.replace(fileName, "")
+		return pathName, fileName
+
+	def isH5(self, inFile):
+		mc = camiryo.myCol
+		h = mc.h5(verb=self.verb)
+		if not h.openHDF5(inFile, "r") == False:
+			return True
+		else:
+			return False
+
+	def listFiles(self, path):
+		fl = []
+		for path, subdirs, files in os.walk(path):
+			for name in files:
+				fl.append(os.path.join(path, name))
+				
+		return fl
+
+	def loadSetting(self):
+		self.printIf("loadSetting: loadSetting started...")
+		try:
+			if os.path.isfile(".set"):
+				GUI.takeAllFromList(self, self.ui.listWidget)
+				GUI.takeAllFromList(self, self.ui.listWidget_2)
+				f = open(".set", "r")
+				for i in f:
+					ln = i.replace("\n","")
+					if ln.startswith("aa"):
+						aa = ln.split("=")[1]
+						isaa, inaa = aa.split("|")
+						self.ui.spinBox.setValue(int(inaa))
+						if isaa == "True":
+							self.ui.groupBox_3.setChecked(True)
+						else:
+							self.ui.groupBox_3.setChecked(False)
+					elif ln.startswith("lp"):
+						self.printIf("loadSetting: Local Path detected...")
+						lp = ln.split("=")[1]
+						GUI.add2List(self, lp, self.ui.listWidget)
+					elif ln.startswith("rp"):
+						self.printIf("loadSetting: Remote Path detected...")
+						rp = ln.split("=")[1]
+						GUI.add2List(self, rp, self.ui.listWidget_2)	
+					else:
+						self.printIf("loadSetting: Unknown line in setting file. Skipping...")
+		except:
+			self.printIf("loadSetting: Something went wrong...")		
 			
-  def ZoomTMP(self, ev):
-	  if ev.delta() < 0:
-		  self.ui.graphicsView_9.scale(0.9, 0.9)
-	  else:
-		  self.ui.graphicsView_9.scale(1.1, 1.1)
+	def updateSetting(self):
+		self.printIf("updateSetting: updateSetting started...")
+		try:
+			f = open("./.set", "w")
+			if self.ui.groupBox_3.isChecked():
+				aa = True
+			else:
+				aa = False
 			
+			interv = self.ui.spinBox.value()
+			
+			f.write("aa=%s|%s\n" %(aa, interv))
+				
+			for i in GUI.returnAllList(self, self.ui.listWidget_2):
+				f.write("rp=%s\n" %(i))
+			
+			for i in GUI.returnAllList(self, self.ui.listWidget):
+				f.write("lp=%s\n" %(i))
+			
+			self.printIf("updateSetting: updateSetting successfully done...")
+			f.close()
+		except:
+			self.printIf("updateSetting: someting went wrong...")
+
+	def addRemotePath(self):
+		self.printIf("addRemotePath: addRemotePath started...")
+		
+		ip = str(self.ui.lineEdit.text())
+		user = str(self.ui.lineEdit_2.text())
+		passwd = str(self.ui.lineEdit_3.text())
+		remPath = str(self.ui.lineEdit_4.text())		
+
+
+		if self.ftp(ip, user, passwd, remPath) == True:
+			server = str(self.ui.lineEdit.text())
+			user = str(self.ui.lineEdit_2.text())
+			passwd = str(self.ui.lineEdit_3.text())
+			remPath = str(self.ui.lineEdit_4.text())
+			if self.ui.checkBox_2.checkState() == QtCore.Qt.Checked:
+				res = True
+			else:
+				res = False
+			
+			remotePath = "%s|%s@%s|%s|%s" %(user, passwd, server, remPath, res)
+			GUI.add2List(self, remotePath, self.ui.listWidget_2)
+			self.printIf("ftp: Connection confirmed.")
+			self.printIf("addRemotePath: addRemotePath successfully done...")
+		elif self.ftp(ip, user, passwd, remPath) == False:
+			GUI.err(self, "Connection Failed.\nCheck the server, user name and password or your connection")
+			self.printIf("addRemotePath: someting went wrong...")
+		elif self.ftp(ip, user, passwd, remPath) == None:
+			GUI.err(self, "Check remote directory")
+		
+	def getDataOverFTP(self, ip, usr, passwd, rFile, lPath):
+		server = str(ip)
+		user = str(usr)
+		passwd = str(passwd)
+		remPath = str(rFile)
+		ftp = FTP(server)
+		ftp.login(user, passwd)
+		filePath, fileName  = self.pathName(remPath)
+		ftp.cwd(filePath)
+		print "get data"
+		ftp.retrbinary("RETR " + fileName ,open("%s/%s" %(lPath, fileName), 'wb').write)
+		
+		
+		
+	def ftp(self, ip, usr, passwd, rDir):
+		self.printIf("ftp: Check remote connection started...")
+		server = str(ip)
+		user = str(usr)
+		passwd = str(passwd)
+		remPath = str(rDir)
+		
+		try:
+			ftp = FTP(server)
+			ftp.login(user, passwd)
+			con = True
+		except:
+			con = False
+		if con:
+			try:
+				ftp.cwd(remPath)
+				remp = True
+			except:
+				remp = False
+				return None
+				ftp.quit()
+		
+		if con and remp:
+			ftp.quit()
+			return True
+		else:
+			return False
+			
+	def addLocalPath(self):
+		self.printIf("Add local path started...")
+		try:
+			odir = GUI.dirSelect(self)
+			if not odir == "":
+				if self.ui.checkBox.checkState() == QtCore.Qt.Checked:
+					res = True
+				else:
+					res = False
+					
+				localPath = "%s|%s" %(odir, res)
+				GUI.add2List(self, localPath, self.ui.listWidget)
+				self.printIf("addLocalPath: addLocalPath successfully done...")
+			else:
+				self.printIf("addLocalPath: path selection canceled...")
+		except:
+			self.printIf("addLocalPath: someting went wrong...")
+
+	def getLists(self):
+		it = -1
+		self.lst = []
+		for i in GUI.returnAllList(self, self.ui.listWidget):
+			it = it + 1
+			self.tab = QtGui.QWidget()
+			self.tab.setObjectName(("tab%s") %(it))
+			lDirPath, isRes = i.split("|")
+			lPath, lDir = self.pathName(lDirPath)
+			self.ui.tabWidget_2.addTab(self.tab, ("%s" %(lDir)))
+			self.gridLayout = QtGui.QGridLayout(self.tab)
+			self.lst.append(QtGui.QListWidget(self.tab))
+			self.lst[it].setObjectName(("listWidget%s" %(it)))
+			self.gridLayout.setObjectName("gridLayout")
+			self.gridLayout.addWidget(self.lst[it], 0, 0, 1, 1)
+			if isRes == "False":
+				lFiles = glob.glob("%s/*.h5" %(lDirPath))
+				for u in lFiles:
+					if self.isH5(u):
+						GUI.add2List(self, u, self.lst[it])
+			elif isRes == "True":
+				for u in self.listFiles(lDirPath):
+					if self.isH5(u):
+						GUI.add2List(self, u, self.lst[it])
+			self.lst[it].sortItems(1)
+		
+		for k in GUI.returnAllList(self, self.ui.listWidget_2):
+			user, passwd = k.split("@")[0].split("|")
+			ip, rDirPath, isRes = k.split("@")[1].split("|")
+			if self.ftp(ip, user, passwd, rDirPath) == True:
+				it = it + 1
+				self.tab = QtGui.QWidget()
+				self.tab.setObjectName(("tab%s") %(it))
+				rPath, rDir = self.pathName(rDirPath)
+				self.ui.tabWidget_2.addTab(self.tab, ("FTP(%s)" %(rDir)))
+				self.gridLayout = QtGui.QGridLayout(self.tab)
+				self.lst.append(QtGui.QListWidget(self.tab))
+				self.lst[it].setObjectName(("listWidget%s" %(it)))
+				self.gridLayout.setObjectName("gridLayout")
+				self.gridLayout.addWidget(self.lst[it], 0, 0, 1, 1)
+				ftp = FTP(ip)
+				ftp.login(user, passwd)
+				self.lst[it].sortItems(1)
+				
+				ftp.cwd(rDirPath)
+				data = []
+				dire = []
+				files = []
+				ftp.dir(data.append)
+				
+				for i in data:
+					if i.startswith("-"):
+						files.append(i.split()[len(i.split())-1])
+					if i.startswith("d"):
+						dire.append(i.split()[len(i.split())-1])
+				
+				if isRes == "False":
+					for u in files:
+						if u.endswith("h5"):
+							ln = "%s|%s@%s|%s/%s" %(user, passwd, ip, rDirPath, u)
+							GUI.add2List(self, ln, self.lst[it])
+				elif isRes == "True":
+					for u in files:
+						if u.endswith("h5"):
+							ln = "%s|%s@%s|%s/%s" %(user, passwd, ip, rDirPath, u)
+							GUI.add2List(self, ln, self.lst[it])
+					
+					for u in dire:
+						subData = []
+						ftp.cwd("%s/%s" %(rDirPath, u))
+						ftp.dir(subData.append)
+						for l in subData:
+							if l.endswith("h5"):
+								ll = l.split()[len(l.split())-1]
+								ln = "%s|%s@%s|%s/%s/%s" %(user, passwd, ip, rDirPath, u, ll)
+								GUI.add2List(self, ln, self.lst[it])
+							
+			
+			
+			elif self.ftp(ip, user, passwd, remPath) == False:
+				self.printIf("Connection Failed.\nCheck the server, user name and password or your connection")
+			elif self.ftp(ip, user, passwd, remPath) == None:
+				self.printIf("Check remote directory")
+		
+		for i in self.lst:
+			self.addDisplay(i)
+			i.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		if self.ui.tabWidget_2.count() > 0:
+			self.ui.pushButton_6.setEnabled(True)
+		else:
+			self.ui.pushButton_6.setEnabled(False)
+
+	def addDisplay(self, listDev):
+		listDev.clicked.connect(lambda: self.display(listDev))
+		
+	def display(self, listDev):
+		dispType = self.ui.comboBox.currentText()
+		fle = listDev.currentItem()
+		fle = fle.text()
+		
+		if fle.contains("@"):
+			user, passwd = str(fle).split("@")[0].split("|")
+			server, rFile = str(fle).split("@")[1].split("|")
+			print rFile
+			tmpFile = self.pathName(rFile)[1]
+			
+			self.getDataOverFTP(server, user, passwd, rFile, str(tempfile.gettempdir()))
+			
+			eFile = "%s/%s" %(str(tempfile.gettempdir()), tmpFile)
+			
+			mc = camiryo.myCol
+			col = mc.coloring(verb=self.verb)
+			if dispType == "Vegetation, Snow, Smoke, Dust and Fog (Day)":
+				data = col.vssdfD(eFile)
+			elif dispType == "Clouds, Convection, Snow, Fog and Fires (Day)":
+				data =  col.ccsfD(eFile)
+			elif dispType == "Snow and Fog (Day)":
+				data =  col.sfD(eFile)
+			elif dispType == "Severe Convection (Day)":
+				data =  col.scD(eFile)
+			elif dispType == "Clouds, Fog and Contrails (Night)":
+				data =  col.cfcN(eFile)
+			elif dispType == "Dust, Thin Clouds and Contrails (Day & Night)":
+				data =  col.dtccDN(eFile)
+			elif dispType == "Severe Cyclones, Jets and PV Analysis (Day & Night)":
+				data =  col.scjPVaDN(fle)
+			col.imgCreate(data, "%s/cam.png" %(tempfile.gettempdir()))
+			self.showme()
+			
+			if os.path.isfile(eFile):
+				os.remove(eFile)
+			if os.path.isfile("%s/cam.png" %(tempfile.gettempdir())):
+				os.remove("%s/cam.png" %(tempfile.gettempdir()))
+
+			
+		else:
+			eFile = fle
+			
+			mc = camiryo.myCol
+			col = mc.coloring(verb=self.verb)
+			if dispType == "Vegetation, Snow, Smoke, Dust and Fog (Day)":
+				data = col.vssdfD(eFile)
+			elif dispType == "Clouds, Convection, Snow, Fog and Fires (Day)":
+				data =  col.ccsfD(eFile)
+			elif dispType == "Snow and Fog (Day)":
+				data =  col.sfD(eFile)
+			elif dispType == "Severe Convection (Day)":
+				data =  col.scD(eFile)
+			elif dispType == "Clouds, Fog and Contrails (Night)":
+				data =  col.cfcN(eFile)
+			elif dispType == "Dust, Thin Clouds and Contrails (Day & Night)":
+				data =  col.dtccDN(eFile)
+			elif dispType == "Severe Cyclones, Jets and PV Analysis (Day & Night)":
+				data =  col.scjPVaDN(fle)
+			col.imgCreate(data, "%s/cam.png" %(tempfile.gettempdir()))
+			self.showme()
+			os.remove("%s/cam.png" %(tempfile.gettempdir()))
+				
+	def showme(self):
+		diss = "%s/cam.png" %(tempfile.gettempdir())
+		if os.path.isfile(str(diss)):
+			scene = QtGui.QGraphicsScene()
+			scene.addPixmap(QtGui.QPixmap(diss))
+			self.ui.graphicsView.setScene(scene)
+			
+	def showmeani(self, i):
+		diss = "%s/cam%s.png" %(tempfile.gettempdir(), i)
+		if os.path.isfile(str(diss)):
+			scene = QtGui.QGraphicsScene()
+			scene.addPixmap(QtGui.QPixmap(diss))
+			self.ui.graphicsView.setScene(scene)
+
+	def ZoomAMS(self, ev):
+		if ev.delta() < 0:
+			  self.ui.graphicsView.scale(0.9, 0.9)
+		else:
+			  self.ui.graphicsView.scale(1.1, 1.1)
+
 app = QtGui.QApplication(sys.argv)
-f = MyForm()
+if len(sys.argv) >= 2:
+	if "True".startswith(sys.argv[1].upper()):
+		print "Verbose mode activated"
+		ver = True
+	else:
+		print "Verbose mode deactivated"
+		ver = False
+else:
+	print "Verbose mode deactivated"
+	ver = False
+f = MyForm(verb=ver)
 f.show()
+
 app.exec_()
