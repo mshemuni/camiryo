@@ -28,6 +28,8 @@ Camiryo's dependencies are:
 
   * [http://www.h5py.org/ h5py].
 
+  * [http://effbot.org/librarybook/ftplib.htm ftplib].
+
 == Unpacking ==
 Now Download Camiryo and unpack it wherever you want (Be sure the users have all permissions on the path in question).
 
