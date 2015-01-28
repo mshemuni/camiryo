@@ -1,23 +1,5 @@
-Bu yazılım DAG adına Mohammad Shameoni Niaei geliştirmiştir.
-
-1)pat dosyası:
-	
-	|depolama
-		|Avrasya
-			|_MSG
-			|_MSGRSS
-			|_MPF
-		DAG-
-			|_MSG
-			|_MSGRSS
-			|_MPF
-		Turkiye-
-			|_MSG
-			|_MSGRSS
-			|_MPF
-
-	depolama dizinini tutar.
-
-2) chTable:
-	Kanal tablosu
-
+Camiryo V2 have is a library now.
+You can download and use it.
+By downloading this version you are getting CamiryoGUI too.
+Camiryo is capable to display files over FTP or locally.
+For further information: http://camiryo.mshyk.org/code/
