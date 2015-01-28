@@ -27,6 +27,8 @@ Camiryo'nun bağımlılıkları:
 
   * [http://www.h5py.org/ h5py]
 
+  * [http://effbot.org/librarybook/ftplib.htm ftplib].
+
 == Arşivden çıkarmak ==
 Camiryo'yu indirip istediğiniz dizine çıkarınız (Söz konusu dizinde okuma yazma ve çalıştırma haklarına sahip olduğunuzdan emin olunuz).
 
